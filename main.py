@@ -20,17 +20,20 @@ cache = TTLCache(maxsize=500, ttl=100)
 class Item(BaseModel):
     data: dict
 
+import os
+from dotenv import load_dotenv
+load_dotenv()
 # secrets and constants
-slack_signing_secret = ""
-pager_duty_api_key = ""
-slack_client_token = ""
-linear_auth_header = ""
-support_channel_id = ""
-pager_duty_schedule_id = ""
-pager_duty_escalation_policy_id = ""
-pager_duty_service_id = ""
-emails_exclude_list = ""
-linear_team_id = ""
+slack_signing_secret = os.getenv('slack_signing_secret', "")
+pager_duty_api_key = os.getenv('pager_duty_api_key', "") # private key
+slack_client_token = os.getenv('slack_client_token', "")
+linear_auth_header = os.getenv('linear_auth_header', "") # private key
+support_channel_id = os.getenv('support_channel_id', "")
+pager_duty_schedule_id = os.getenv('pager_duty_schedule_id', "")
+pager_duty_escalation_policy_id = os.getenv('pager_duty_escalation_policy_id', "")
+pager_duty_service_id = os.getenv('pager_duty_service_id', "")
+linear_team_id = os.getenv('linear_team_id', "")
+emails_exclude_list = ['@permit.io$', '^odedbd@gmail.com$']
 
 
 app = FastAPI()
