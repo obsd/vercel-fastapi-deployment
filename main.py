@@ -33,7 +33,7 @@ pager_duty_schedule_id = os.getenv('pager_duty_schedule_id', "")
 pager_duty_escalation_policy_id = os.getenv('pager_duty_escalation_policy_id', "")
 pager_duty_service_id = os.getenv('pager_duty_service_id', "")
 linear_team_id = os.getenv('linear_team_id', "")
-emails_exclude_list = ['@permit.io$', '^odedbd@gmail.com$']
+emails_exclude_list = ['@permit.io1$', '^odedbd@gmail.com$']
 
 
 app = FastAPI()
