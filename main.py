@@ -36,6 +36,7 @@ linear_team_id = os.getenv('linear_team_id', "")
 emails_exclude_list = ['@permit.io1$', '^odedbd@gmail.com$']
 
 
+
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
