@@ -1,5 +1,9 @@
 from slack_sdk import WebClient
 import re
+from time import time
+from fastapi import FastAPI, __version__
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 
 import uvicorn
 from fastapi import FastAPI, Form, Request
@@ -221,6 +225,26 @@ async def slack_interactive(request: Request):
 
 #     # assign user to org
 #     return {"message": "JSON data received and printed"}
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+html = f"""
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FastAPI on Vercel</title>
+        <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    </head>
+</html>
+"""
+
+@app.get("/")
+async def root():
+    return HTMLResponse(html)
+
+@app.get('/ping')
+async def hello():
+    return {'res': 'pong', 'version': __version__, "time": time()}
 
 
 if __name__ == '__main__':
