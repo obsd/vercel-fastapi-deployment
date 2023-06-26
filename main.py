@@ -101,7 +101,7 @@ def get_message_id(message):
     return message_id
 
 def add_message_to_cache(message_id):
-    cache[message_id] = True
+    cache[message_id] = True 
 
 # @slack_event_manger_inc.on('message')
 # async def message_sent_inc(event_data):
