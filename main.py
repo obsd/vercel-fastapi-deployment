@@ -57,12 +57,12 @@ async def check_if_slack_retries(request: Request, call_next: Callable):
         return response
 
 
-slack_event_manger = SlackEventManager(singing_secret=slack_signing_secret,
-                                       endpoint='/support/slack_events',
-                                       app=app)
-
 slack_event_manger_inc = SlackEventManager(singing_secret=slack_signing_secret_inc,
                                        endpoint='/support/slack_events_inc',
+                                       app=app)
+
+slack_event_manger = SlackEventManager(singing_secret=slack_signing_secret,
+                                       endpoint='/support/slack_events',
                                        app=app)
 
 pager_duty_api = APISession(
