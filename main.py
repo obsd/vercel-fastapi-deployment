@@ -57,13 +57,13 @@ async def check_if_slack_retries(request: Request, call_next: Callable):
         return response
 
 
-# slack_event_manger = SlackEventManager(singing_secret=slack_signing_secret,
-#                                        endpoint='/support/slack_events',
-#                                        app=app)
-
-slack_event_manger_inc = SlackEventManager(singing_secret=slack_signing_secret_inc,
-                                       endpoint='/support/slack_events_inc',
+slack_event_manger = SlackEventManager(singing_secret=slack_signing_secret,
+                                       endpoint='/support/slack_events',
                                        app=app)
+
+# slack_event_manger_inc = SlackEventManager(singing_secret=slack_signing_secret_inc,
+#                                        endpoint='/support/slack_events_inc',
+#                                        app=app)
 
 pager_duty_api = APISession(
     pager_duty_api_key, # PagerDuty API token from secrets
@@ -103,9 +103,9 @@ def get_message_id(message):
 def add_message_to_cache(message_id):
     cache[message_id] = True
 
-@slack_event_manger_inc.on('message')
-async def message_sent_inc(event_data):
-    await _message_sent(event_data, _slack_client_inc)
+# @slack_event_manger_inc.on('message')
+# async def message_sent_inc(event_data):
+#     await _message_sent(event_data, _slack_client_inc)
 
 # @slack_event_manger.on('message')
 # async def message_sent(event_data):
