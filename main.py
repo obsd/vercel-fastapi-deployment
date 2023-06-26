@@ -61,7 +61,7 @@ slack_event_manger = SlackEventManager(singing_secret=slack_signing_secret,
                                        endpoint='/support/slack_events',
                                        app=app)
 
-slack_event_manger_inc = SlackEventManager(singing_secret=slack_signing_secret,
+slack_event_manger_inc = SlackEventManager(singing_secret=slack_signing_secret_inc,
                                        endpoint='/support/slack_events_inc',
                                        app=app)
 
