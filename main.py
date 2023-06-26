@@ -107,9 +107,9 @@ def add_message_to_cache(message_id):
 # async def message_sent_inc(event_data):
 #     await _message_sent(event_data, _slack_client_inc)
 
-# @slack_event_manger.on('message')
-# async def message_sent(event_data):
-#     await _message_sent(event_data, _slack_client)
+@slack_event_manger.on('message')
+async def message_sent(event_data):
+    await _message_sent(event_data, _slack_client)
 
 async def _message_sent(event_data, slack_client):
 
