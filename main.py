@@ -31,7 +31,7 @@ slack_signing_secret_inc = os.getenv('slack_signing_secret_inc', "")
 slack_signing_secret = os.getenv('slack_signing_secret', "")
 slack_client_token = os.getenv('slack_client_token', "")
 slack_client_token_inc = os.getenv('slack_client_token_inc', "")
-slack_support_channel_id = os.getenv('support_channel_id', "")
+slack_support_channel_id = os.getenv('support_channel_id', "") 
 # linear
 linear_team_id = os.getenv('linear_team_id', "")
 linear_auth_header = os.getenv('linear_auth_header', "")
