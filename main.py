@@ -1,7 +1,8 @@
+from typing import Callable
 from slack_sdk import WebClient
 import re
 from time import time
-from fastapi import FastAPI, __version__
+from fastapi import FastAPI, Response, __version__
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 
@@ -15,34 +16,53 @@ from gql.transport.requests import RequestsHTTPTransport
 from pdpyras import APISession
 from cachetools import TTLCache
 from common.utils import create_linear_ticket, fetch_slack_user_info, is_late_hour, send_slack_late_hour_notification, trigger_incident, notify_support_channel, default_pager_duty_user
+from common.const import emails_exclude_list, general_channel_names
+from dotenv import load_dotenv
+import os
 
 cache = TTLCache(maxsize=500, ttl=100)
 class Item(BaseModel):
     data: dict
 
-import os
-from dotenv import load_dotenv
 load_dotenv()
 # secrets and constants
+# slack
+slack_signing_secret_inc = os.getenv('slack_signing_secret_inc', "")
 slack_signing_secret = os.getenv('slack_signing_secret', "")
-pager_duty_api_key = os.getenv('pager_duty_api_key', "") # private key
 slack_client_token = os.getenv('slack_client_token', "")
-linear_auth_header = os.getenv('linear_auth_header', "") # private key
-support_channel_id = os.getenv('support_channel_id', "")
+slack_client_token_inc = os.getenv('slack_client_token_inc', "")
+slack_support_channel_id = os.getenv('support_channel_id', "")
+# linear
+linear_team_id = os.getenv('linear_team_id', "")
+linear_auth_header = os.getenv('linear_auth_header', "")
+# pager duty
+pager_duty_api_key = os.getenv('pager_duty_api_key', "")
 pager_duty_schedule_id = os.getenv('pager_duty_schedule_id', "")
 pager_duty_escalation_policy_id = os.getenv('pager_duty_escalation_policy_id', "")
 pager_duty_service_id = os.getenv('pager_duty_service_id', "")
-linear_team_id = os.getenv('linear_team_id', "")
-emails_exclude_list = ['@permit.io1$', '^odedbd@gmail.com$']
-
 
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# add custom middleware to fastapi that returns 200 for slack retries
+@app.middleware("http")
+async def check_if_slack_retries(request: Request, call_next: Callable):
+    if request.headers.get('x-slack-retry-num'):
+        logger.info('slack retry')
+        return Response(status_code=200)
+    else:
+        response = await call_next(request)
+        return response
+
+
 slack_event_manger = SlackEventManager(singing_secret=slack_signing_secret,
                                        endpoint='/support/slack_events',
+                                       app=app)
+
+slack_event_manger_inc = SlackEventManager(singing_secret=slack_signing_secret,
+                                       endpoint='/support/slack_events_inc',
                                        app=app)
 
 pager_duty_api = APISession(
@@ -56,8 +76,10 @@ gql_logger.setLevel(logging.WARN)
 # user email domains regex exclude list
 emails_exclude_list_compiled = re.compile('|'.join(emails_exclude_list))
 
-slack_client = WebClient(
+_slack_client = WebClient(
     token=slack_client_token)
+_slack_client_inc = WebClient(
+    token=slack_client_token_inc)
 
 sample_transport = RequestsHTTPTransport(
     url="https://api.linear.app/graphql",
@@ -81,8 +103,16 @@ def get_message_id(message):
 def add_message_to_cache(message_id):
     cache[message_id] = True
 
+@slack_event_manger_inc.on('message')
+async def message_sent_inc(event_data):
+    await _message_sent(event_data, _slack_client_inc)
+
 @slack_event_manger.on('message')
 async def message_sent(event_data):
+    await _message_sent(event_data, _slack_client)
+
+async def _message_sent(event_data, slack_client):
+
     message_id = get_message_id(event_data)
     if message_id in cache:
         logger.info('Message already in cache')
@@ -109,7 +139,7 @@ async def message_sent(event_data):
             logger.info('Email not excluded')
     except KeyError as e:
         logger.error("Error fetching user data: {}".format(e))
-        user_obj = {'user_email': "user_email", 'profile': {'email': ""}}
+        user_obj = {'user_email': "user_email", 'profile': {'email': "no user found", 'real_name': "no user found"}}
     try:
         is_ext_shared_channel = event_data['is_ext_shared_channel']
     except KeyError as e:
@@ -124,6 +154,10 @@ async def message_sent(event_data):
     )
 
     channel_name = channel_obj['channel']['name']
+    if channel_name in general_channel_names:
+        if '?' not in message_text:
+            logger.info('Message without question mark in general channel')
+            return
 
     username = user_obj['profile']['real_name']
     user_email = user_obj['profile']['email']
@@ -156,10 +190,11 @@ async def message_sent(event_data):
 
     link_to_ticket = await create_linear_ticket(linear_client=linear_client, linear_team_id=linear_team_id, assignee_email=on_call_email, title=title, details=details)
     # notify in slack's support channel
-    notify_support_channel(slack_client=slack_client, support_channel_id=support_channel_id, link=link, username=username, email=user_email, source_name=channel_name, link_to_ticket=link_to_ticket) # type: ignore
+    notify_support_channel(slack_client=_slack_client_inc, support_channel_id=slack_support_channel_id, link=link, username=username, email=user_email, source_name=channel_name, link_to_ticket=link_to_ticket) # type: ignore
     
     if is_late_hour():
-        send_slack_late_hour_notification(slack_client, channel_id)
+        send_slack_late_hour_notification(slack_client=slack_client, channel_id=channel_id, channel_name=channel_name)
+
         
 
 

@@ -1,20 +1,35 @@
 import datetime
 import logging
+import pytz
+from common.const import general_channel_names, public_channel_names
 
-from gql import gql, Client
+from gql import gql
 from slack_sdk.errors import SlackApiError
 
 logger = logging.getLogger(__name__)
 default_pager_duty_user = "asaf@permit.io"
 
 def is_late_hour():
-    now = datetime.datetime.now()
-    if now.hour > 2 or now.hour < 7:
+    tz = pytz.timezone('Asia/Jerusalem')
+    now = datetime.datetime.now(tz)
+
+    if now.hour > 2 and now.hour < 7:
         return True
     return False
 
-def send_slack_late_hour_notification(slack_client, channel_id):
-                slack_client.chat_postMessage(
+def send_slack_late_hour_notification(slack_client, channel_id, channel_name):
+    import pdb; pdb.set_trace()
+    if channel_name in general_channel_names:
+        logger.info(f"Sending late hour notification to channel {channel_name}")
+        return
+    if channel_name in public_channel_names:
+        logger.info(f"Sending late hour notification to channel {channel_name}")
+        slack_client.chat_postMessage(
+            channel=channel_id,
+            text=f"Hi, thanks for reaching out :innocent:; it seems most of the team is AFK(:sleeping:) at the moment- so please expect a delay in response.",
+        )
+    else:
+        slack_client.chat_postMessage(
             channel=channel_id,
             text=f"Hi, thanks for reaching out :innocent:; it seems most of the team is AFK(:sleeping:) at the moment- so please expect a delay in response. If this is an emergency you can click the button below to escalate the call  (:warning: this would probably wake someone up).",
             blocks=[
@@ -22,7 +37,6 @@ def send_slack_late_hour_notification(slack_client, channel_id):
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "emoji": True,
                         "text": f"Hi, thanks for reaching out :innocent:; it seems most of the team is AFK(:sleeping:) at the moment- so please expect a delay in response. If this is an emergency you can click the button below to escalate the call  (:warning: this would probably wake someone up)."
                     }
                 },
